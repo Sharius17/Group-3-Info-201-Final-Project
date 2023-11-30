@@ -17,16 +17,15 @@ s0802_2022_WA <- get_acs(geography = "state",
         state = "WA",
         gemoetry = TRUE,
         survey = "acs1",
-        year = 2022)
+        year = 2022,
+        cache_table = T)
 
 s0802_2022_sea <- get_acs(geography = "place",
         table = "S0802",
         state = "WA",
         gemoetry = TRUE,
         survey = "acs1",
-        year = 2022)
-
-s0802_2022_sea <- s0802_2022_sea %>% filter(NAME == "Seattle city, Washington")
+        year = 2022) %>% filter(NAME == "Seattle city, Washington")
 
 keys <- load_variables(2022, "acs1/subject", cache = T)
 ```

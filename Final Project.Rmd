@@ -31,9 +31,4 @@ s0802_2022_sea <- s0802_2022_sea %>% filter(NAME == "Seattle city, Washington")
 keys <- load_variables(2022, "acs1/subject", cache = T)
 ```
 
-<<<<<<< HEAD
 PUAFADFJDKAFJDAKFLDJFLAJDFLJDASKFLJDSKFJALFDJALKSFJASDLFJALKDFJLKDAJF
-=======
-Avatar the last airbender >>
->>>>>>> 31c1b7f24a45c310c08f7215a1550b2a0c856d64
-

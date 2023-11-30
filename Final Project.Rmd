@@ -11,6 +11,8 @@ library(tidyverse)
 library(tidycensus)
 ```
 
+
+census datasets
 ```{r}
 s0802_2022_WA <- get_acs(geography = "state",
         table = "S0802",

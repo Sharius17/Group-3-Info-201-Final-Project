@@ -31,4 +31,8 @@ s0802_2022_sea <- s0802_2022_sea %>% filter(NAME == "Seattle city, Washington")
 keys <- load_variables(2022, "acs1/subject", cache = T)
 ```
 
+<<<<<<< HEAD
 blahblahblah
+=======
+PAPAPAPAPAPAPAPAPAPAPAPAPAPAPAAPA
+>>>>>>> 1470d8dda4db15dcc7f175399e209807737ef3dc

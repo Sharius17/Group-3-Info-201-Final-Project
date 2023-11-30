@@ -11,24 +11,85 @@ library(tidyverse)
 library(tidycensus)
 ```
 
-
-census datasets
-```{r}
-s0802_2022_WA <- get_acs(geography = "state",
-        table = "S0802",
-        state = "WA",
-        gemoetry = TRUE,
-        survey = "acs1",
-        year = 2022,
-        cache_table = T)
-
-s0802_2022_sea <- get_acs(geography = "place",
-        table = "S0802",
-        state = "WA",
-        gemoetry = TRUE,
-        survey = "acs1",
-        year = 2022) %>% filter(NAME == "Seattle city, Washington")
-
+Obtaining census datasets (set to not eval because run time is very long when using census API)
+```{r, eval = F}
+# codebook for survey variables
 keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
+
+# first extract earliest (2010) data to initialize data frames
+# later years will be appended to this
+s0802_WA <- get_acs(geography = "state",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = 2010,
+        cache_table = T) %>% 
+  select(NAME, variable, estimate) %>% 
+  mutate(year = 2010) %>% 
+  rename("location" = NAME)
+
+s0802_sea <- get_acs(geography = "place",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = 2010,
+        cache_table = T) %>% 
+  filter(NAME == "Seattle city, Washington") %>% 
+  select(NAME, variable, estimate) %>% 
+  mutate(year = 2010) %>% 
+  rename("location" = NAME)
+
+# appending years 2011-2022 
+nums <- 2011:2022
+# need to omit the year 2020 because the regular 1-year ACS for 2020 was not released and is not available in tidycensus.
+nums <- nums[nums != 2020]
+
+for (i in nums) {
+  temp_WA <- get_acs(geography = "state",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = i,
+        cache_table = T) %>% 
+  select(NAME, variable, estimate) %>% 
+  mutate(year = i) %>% 
+  rename("location" = NAME)
+  s0802_WA <- rbind(s0802_WA, temp_WA)
+  
+  temp_sea <- get_acs(geography = "place",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = i,
+        cache_table = T) %>% 
+  filter(NAME == "Seattle city, Washington") %>% 
+  select(NAME, variable, estimate) %>% 
+  mutate(year = i) %>% 
+  rename("location" = NAME)
+  s0802_sea <- rbind(s0802_sea, temp_sea)
+}
+
+# export these datasets for safekeeping
+write.csv(s0802_WA, "Data/Clean/s0802_WA.csv", row.names = F)
+write.csv(s0802_sea, "Data/Clean/s0802_sea.csv", row.names = F)
+write.csv(keys, "Data/Clean/s0802_keys.csv", row.names = F)
 ```
+
+Load datasets
+```{r}
+s0802_WA <- read_delim("Data/Clean/s0802_WA.csv")
+s0802_sea <- read_delim("Data/Clean/s0802_sea.csv")
+s0802_keys <- read_delim("Data/Clean/s0802_keys.csv")
+
+crash_sea <- read_delim("Data/Clean/seattle_collisions.csv")
+crash_WA <- read_delim("Data/Clean/wa_collisions.csv")
+
+gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
+gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
+```
+
 

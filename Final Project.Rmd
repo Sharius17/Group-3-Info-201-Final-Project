@@ -10,3 +10,15 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidycensus)
 ```
+
+```{r}
+s0802_2022 <- get_acs(geography = "state",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = 2022)
+
+keys <- load_variables(2022, "acs1/subject", cache = T)
+```
+

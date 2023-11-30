@@ -32,4 +32,3 @@ s0802_2022_sea <- get_acs(geography = "place",
 keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 ```
 
-PUAFADFJDKAFJDAKFLDJFLAJDFLJDASKFLJDSKFJALFDJALKSFJASDLFJALKDFJLKDAJF

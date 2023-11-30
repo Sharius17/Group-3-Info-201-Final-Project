@@ -27,6 +27,6 @@ s0802_2022_sea <- get_acs(geography = "place",
         survey = "acs1",
         year = 2022) %>% filter(NAME == "Seattle city, Washington")
 
-keys <- load_variables(2022, "acs1/subject", cache = T)
+keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 ```
 

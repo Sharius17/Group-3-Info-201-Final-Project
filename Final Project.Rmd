@@ -92,4 +92,40 @@ gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
 gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
 ```
 
+Combine data
+```{r}
+# rename column so that it can be joined to s0802 table
+s0802_keys <- s0802_keys %>% 
+  select(name, label) %>% 
+  rename("variable" = name)
+
+# combine Seattle and WA data, join keys
+s0802 <- rbind(s0802_sea, s0802_WA) %>% left_join(s0802_keys)
+
+# add location variable to gas data so it can be joined
+gas_sea <- gas_sea %>% mutate(location = "Seattle city, Washington")
+gas_WA <- gas_WA %>% mutate(location = "Washington")
+
+gas <- rbind(gas_WA, gas_sea)
+
+# tidy collision data from wide to long form
+# need to be yearly, not monthly, tally up each column
+crash_sea_yearly <- crash_sea %>% 
+  pivot_longer(2:18, names_to = "year", values_to = "crashes") %>%
+  group_by(year) %>% 
+  summarize(total_crashes = sum(crashes)) %>% 
+  mutate(location = "Seattle city, Washington", year = as.numeric(year))
+
+crash_WA_yearly <- crash_WA %>% 
+  pivot_longer(2:18, names_to = "year", values_to = "crashes") %>%
+  group_by(year) %>% 
+  summarize(total_crashes = sum(crashes)) %>% 
+  mutate(location = "Washington", year = as.numeric(year))
+
+# test joining datasets
+rbind(crash_WA_yearly, crash_sea_yearly) %>% 
+  left_join(gas) %>% 
+  rename("gas_price" = price)
+```
+
 

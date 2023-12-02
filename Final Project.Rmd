@@ -143,4 +143,9 @@ s0802 <- read_delim("Data/Clean/s0802.csv")
 gas_and_crashes <- read_delim("Data/Clean/gas_and_crashes.csv")
 ```
 
+Final joining
+```{r}
+final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
+```
+
 

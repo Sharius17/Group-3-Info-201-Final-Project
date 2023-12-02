@@ -11,7 +11,7 @@ library(tidyverse)
 library(tidycensus)
 ```
 
-Obtaining census datasets (set to not eval because run time is very long when using census API)
+Obtaining census datasets, preliminary dataset joining and cleaning
 ```{r, eval = F}
 # codebook for survey variables
 keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
@@ -79,8 +79,8 @@ write.csv(s0802_sea, "Data/Clean/s0802_sea.csv", row.names = F)
 write.csv(keys, "Data/Clean/s0802_keys.csv", row.names = F)
 ```
 
-Load datasets
-```{r}
+Load datasets for next stage of cleaning
+```{r, eval = F}
 s0802_WA <- read_delim("Data/Clean/s0802_WA.csv")
 s0802_sea <- read_delim("Data/Clean/s0802_sea.csv")
 s0802_keys <- read_delim("Data/Clean/s0802_keys.csv")
@@ -93,12 +93,18 @@ gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
 ```
 
 Combine data
-```{r}
+```{r, eval = F}
 # rename column so that it can be joined to s0802 table
+# also separate out variable labels into multiple columns
 s0802_keys <- s0802_keys %>% 
   select(name, label) %>% 
-  rename("variable" = name)
+  rename("variable" = name) %>% 
+  separate_wider_delim(cols = label, 
+                       delim = "!!", 
+                       names = c("trait1", "trait2", "trait3", "trait4", "trait5", "trait6"),
+                       too_few = "align_start")
 
+  
 # combine Seattle and WA data, join keys
 s0802 <- rbind(s0802_sea, s0802_WA) %>% left_join(s0802_keys)
 
@@ -122,10 +128,19 @@ crash_WA_yearly <- crash_WA %>%
   summarize(total_crashes = sum(crashes)) %>% 
   mutate(location = "Washington", year = as.numeric(year))
 
-# test joining datasets
-rbind(crash_WA_yearly, crash_sea_yearly) %>% 
+# joining datasets
+gas_and_crashes <- rbind(crash_WA_yearly, crash_sea_yearly) %>% 
   left_join(gas) %>% 
   rename("gas_price" = price)
+
+# save these tidy updated datasets
+write.csv(s0802, "Data/Clean/s0802.csv", row.names = F)
+write.csv(gas_and_crashes, "Data/Clean/gas_and_crashes.csv", row.names = F)
+```
+Load tidy datasets
+```{r}
+s0802 <- read_delim("Data/Clean/s0802.csv")
+gas_and_crashes <- read_delim("Data/Clean/gas_and_crashes.csv")
 ```
 
 

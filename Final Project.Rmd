@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidycensus)
+options(scipen = 999)
 ```
 
 Obtaining census datasets, preliminary dataset joining and cleaning
@@ -148,4 +149,19 @@ Final joining
 final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
 ```
 
+How does means of transportation vary with earnings?
+```{r}
+final %>% filter(trait4 == "Workers 16 years and over with earnings", 
+                 location == "Seattle city, Washington") %>% 
+  group_by(trait5, trait2) %>%
+  filter(trait5 != c("Median earnings (dollars)", NA), trait2 != "Total") %>% 
+  summarize(estimate = mean(estimate)) %>% 
+  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
+  geom_col(position = "fill") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Proportions of Transportation Types by Income",
+       x = "Income",
+       y = "Proportion (%)",
+       fill = "Means of Transportation")
+```
 

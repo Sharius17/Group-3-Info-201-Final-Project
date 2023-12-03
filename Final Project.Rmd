@@ -12,11 +12,8 @@ library(tidycensus)
 options(scipen = 999)
 ```
 
-Obtaining census datasets, preliminary dataset joining and cleaning
+Census API calls and cleaning
 ```{r, eval = F}
-# codebook for survey variables
-keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
-
 # first extract earliest (2010) data to initialize data frames
 # later years will be appended to this
 s0802_WA <- get_acs(geography = "state",
@@ -74,26 +71,11 @@ for (i in nums) {
   s0802_sea <- rbind(s0802_sea, temp_sea)
 }
 
-# export these datasets for safekeeping
-write.csv(s0802_WA, "Data/Clean/s0802_WA.csv", row.names = F)
-write.csv(s0802_sea, "Data/Clean/s0802_sea.csv", row.names = F)
-write.csv(keys, "Data/Clean/s0802_keys.csv", row.names = F)
+# load the codebook for survey variables
+keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 ```
 
-Load datasets for next stage of cleaning
-```{r, eval = F}
-s0802_WA <- read_delim("Data/Clean/s0802_WA.csv")
-s0802_sea <- read_delim("Data/Clean/s0802_sea.csv")
-s0802_keys <- read_delim("Data/Clean/s0802_keys.csv")
-
-crash_sea <- read_delim("Data/Clean/seattle_collisions.csv")
-crash_WA <- read_delim("Data/Clean/wa_collisions.csv")
-
-gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
-gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
-```
-
-Combine data
+Further cleaning
 ```{r, eval = F}
 # rename column so that it can be joined to s0802 table
 # also separate out variable labels into multiple columns
@@ -105,14 +87,21 @@ s0802_keys <- s0802_keys %>%
                        names = c("trait1", "trait2", "trait3", "trait4", "trait5", "trait6"),
                        too_few = "align_start")
 
-  
 # combine Seattle and WA data, join keys
 s0802 <- rbind(s0802_sea, s0802_WA) %>% left_join(s0802_keys)
+
+# load the gas and collisions data
+crash_sea <- read_delim("Data/Clean/seattle_collisions.csv")
+crash_WA <- read_delim("Data/Clean/wa_collisions.csv")
+
+gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
+gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
 
 # add location variable to gas data so it can be joined
 gas_sea <- gas_sea %>% mutate(location = "Seattle city, Washington")
 gas_WA <- gas_WA %>% mutate(location = "Washington")
 
+# join the data
 gas <- rbind(gas_WA, gas_sea)
 
 # tidy collision data from wide to long form
@@ -134,22 +123,19 @@ gas_and_crashes <- rbind(crash_WA_yearly, crash_sea_yearly) %>%
   left_join(gas) %>% 
   rename("gas_price" = price)
 
-# save these tidy updated datasets
-write.csv(s0802, "Data/Clean/s0802.csv", row.names = F)
-write.csv(gas_and_crashes, "Data/Clean/gas_and_crashes.csv", row.names = F)
-```
-Load tidy datasets
-```{r}
-s0802 <- read_delim("Data/Clean/s0802.csv")
-gas_and_crashes <- read_delim("Data/Clean/gas_and_crashes.csv")
+final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
+
+# save the final dataset
+write.csv(final, "Data/Clean/final.csv", row.names = F)
 ```
 
-Final joining
+Load final dataset
 ```{r}
-final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
+final <- read_delim("Data/Clean/final.csv")
 ```
 
 How does means of transportation vary with earnings?
+
 ```{r}
 final %>% filter(trait4 == "Workers 16 years and over with earnings", 
                  location == "Seattle city, Washington") %>% 
@@ -166,6 +152,7 @@ final %>% filter(trait4 == "Workers 16 years and over with earnings",
 ```
 
 How has means of transportation changed over time in Seattle?
+
 ```{r}
 final %>% filter(location == "Seattle city, Washington", 
                  trait2 != "Total", 
@@ -174,9 +161,8 @@ final %>% filter(location == "Seattle city, Washington",
   geom_col(position = "fill")
 ```
 
-color = year
-x = median earnings
-y = gas
+color = year x = median earnings y = gas
+
 ```{r}
 final %>% filter(str_ends(variable, "037"),
                  location == "Seattle city, Washington") %>% 
@@ -188,3 +174,4 @@ final %>% filter(str_ends(variable, "037"),
   labs(x = "Median Salary ($)")
 ```
 
+vehicles available vs .... seattle vs. wa

@@ -23,7 +23,7 @@ s0802_WA <- get_acs(geography = "state",
         survey = "acs1",
         year = 2010,
         cache_table = T) %>% 
-  select(NAME, variable, estimate) %>% 
+  select(NAME, variable, estimate, moe) %>% 
   mutate(year = 2010) %>% 
   rename("location" = NAME)
 
@@ -35,7 +35,7 @@ s0802_sea <- get_acs(geography = "place",
         year = 2010,
         cache_table = T) %>% 
   filter(NAME == "Seattle city, Washington") %>% 
-  select(NAME, variable, estimate) %>% 
+  select(NAME, variable, estimate, moe) %>% 
   mutate(year = 2010) %>% 
   rename("location" = NAME)
 
@@ -52,7 +52,7 @@ for (i in nums) {
         survey = "acs1",
         year = i,
         cache_table = T) %>% 
-  select(NAME, variable, estimate) %>% 
+  select(NAME, variable, estimate, moe) %>% 
   mutate(year = i) %>% 
   rename("location" = NAME)
   s0802_WA <- rbind(s0802_WA, temp_WA)
@@ -65,14 +65,14 @@ for (i in nums) {
         year = i,
         cache_table = T) %>% 
   filter(NAME == "Seattle city, Washington") %>% 
-  select(NAME, variable, estimate) %>% 
+  select(NAME, variable, estimate, moe) %>% 
   mutate(year = i) %>% 
   rename("location" = NAME)
   s0802_sea <- rbind(s0802_sea, temp_sea)
 }
 
 # load the codebook for survey variables
-keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
+s0802_keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 ```
 
 Further cleaning
@@ -175,3 +175,38 @@ final %>% filter(str_ends(variable, "037"),
 ```
 
 vehicles available vs .... seattle vs. wa
+```{r}
+final %>% filter(trait4 == "VEHICLES AVAILABLE",
+                 location == "Seattle city, Washington",
+                 trait2 != "Total") %>% 
+  group_by(trait5, trait2) %>% 
+  summarise(estimate = mean(estimate)) %>% 
+  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
+  geom_col(position = "fill")
+
+
+final %>% filter(trait4 == "VEHICLES AVAILABLE",
+                 location == "Washington",
+                 trait2 != "Total") %>% 
+  group_by(trait5, trait2) %>% 
+  summarise(estimate = mean(estimate)) %>% 
+  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
+  geom_col(position = "fill")
+```
+
+Do people in Seattle use public transportation more than Washington?
+need to obtain ratio
+_C04_001 / 01_001
+```{r}
+final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>% 
+  mutate(ratio = lead(estimate) / estimate) %>% 
+  filter(trait2 == "Total") %>% 
+  ggplot(aes(year, ratio, group = location, color = location)) +
+  geom_point() +
+  geom_line() +
+  labs(y = "% of public commuters") +
+  geom_vline(xintercept = 2020)
+```
+
+
+

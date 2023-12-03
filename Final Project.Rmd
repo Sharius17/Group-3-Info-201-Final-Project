@@ -12,6 +12,13 @@ library(tidycensus)
 options(scipen = 999)
 ```
 
+# Introduction
+
+# Explaining Our Data
+
+# Methods
+
+
 Census API calls and cleaning
 ```{r, eval = F}
 # first extract earliest (2010) data to initialize data frames
@@ -133,6 +140,8 @@ Load final dataset
 ```{r}
 final <- read_delim("Data/Clean/final.csv")
 ```
+# Results 
+
 
 How does means of transportation vary with earnings?
 
@@ -199,14 +208,26 @@ need to obtain ratio
 _C04_001 / 01_001
 ```{r}
 final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>% 
-  mutate(ratio = lead(estimate) / estimate) %>% 
+  mutate(ratio = lead(estimate) / estimate, moe = lead(moe) / estimate) %>% 
   filter(trait2 == "Total") %>% 
   ggplot(aes(year, ratio, group = location, color = location)) +
   geom_point() +
-  geom_line() +
   labs(y = "% of public commuters") +
-  geom_vline(xintercept = 2020)
+  geom_errorbar(aes(ymin = ratio - moe, ymax = ratio + moe))
+```
+commute time with regards to age group
+```{r}
+final %>% 
+  filter(trait4 == "AGE", trait2 != "Total", trait5 != "Median age (years)") %>% 
+  group_by(trait5, trait2, location) %>% 
+  summarise(estimate = mean(estimate)) %>% 
+  ggplot(aes(trait5, estimate, fill = trait2, group = trait2)) +
+  geom_col(position = "fill") +
+  facet_wrap(~ location, scales = "free_y", ncol = 1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 
+
+# Findings 
 

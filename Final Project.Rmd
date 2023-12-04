@@ -10,16 +10,54 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidycensus)
 options(scipen = 999)
+census_preview <- read.csv("Data/ACSST1Y2022.S0802-2023-12-04T032139.csv")
+final <- read_delim("Data/Clean/final.csv")
+s0802 <- read_delim("Data/Clean/S0802.csv")
+crash_sea <- read_delim("Data/Clean/seattle_collisions.csv")
+crash_WA <- read_delim("Data/Clean/wa_collisions.csv")
+gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
+gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
 ```
 
 # Introduction
 
+While National Geographic has described the ability to transport people safely and efficiently across long distances as "fundamental to economic life in modern societies," it does not come without consequences. Specifically, long commute times, especially in densely populated cities, are so ingrained in American work culture that many workers take them as a given. Commute times vary depending on workers' public transportation usage, carpooling, and/or solo driving. Moreover, it is essential to understand the methods in which people travel to work due to its effects on legislation. Government regulations regarding tariffs, tolls, car tab prices are determined by commuters and their respective modes of transportation. In the private sector, insurance rates are influenced by commute behavior as well.\
+For this reason, our topic is interesting because it compares the many factors (race, age, sex, etc.) regarding different transportation methods within the city of Seattle and compares them to the entire state of Washington as a whole. We have also included variables that display gas prices and vehicular crashes, as we aim to determine relationships between these elements and other factors within our dataset. Lastly, for accessibility purposes, our graphs include colorblind-friendly visualizations. For our project, we hope to answer the following questions:
+
+-   How have rates of public transportation usage changed over time in Seattle vs. Washington state?
+
+-   Do wealthier individuals carpool/take public transportation less?
+
+-   Do people drive less if gas prices are higher?
+
+-   Do people in a certain age group take public transportation more?
+
+-   Are car crash rates correlated to the proportion of workers that drive vs. take public transport?
+
+-   Does travel time affect the mode of transportation used?
+
 # Explaining Our Data
+
 
 # Methods
 
+### Processing census data
 
-Census API calls and cleaning
+The tidycensus package provides American Community Survey data in pre-tidied (long) format. The table we are interested in are s0802 (Means of Transportation to Work by Selected Characteristics).\
+Here is what a few rows of ACS data look like with one API call:
+
+```{r, message = F}
+get_acs(geography = "state",
+        table = "S0802",
+        state = "WA",
+        gemoetry = TRUE,
+        survey = "acs1",
+        year = 2010) %>% 
+  head(5)
+```
+
+Data can only be extracted for one year and geographic division at a time. Since we were interested in (1) all the data from 2010-2022, excluding 2020 because no data was available and (2) data for the state of Washington as a whole as well as the city of Seattle, this amounted to 22 API calls. It would be a hassle to combine and join 22 dataframes, so we used a loop to row bind everything together for Seattle and Washington respectively. We selected the variables `NAME, variable, estimate`, added a `year` variable, and renamed `NAME` to `location` so that it would match other datasets.\
+
 ```{r, eval = F}
 # first extract earliest (2010) data to initialize data frames
 # later years will be appended to this
@@ -77,13 +115,21 @@ for (i in nums) {
   rename("location" = NAME)
   s0802_sea <- rbind(s0802_sea, temp_sea)
 }
-
-# load the codebook for survey variables
-s0802_keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 ```
 
-Further cleaning
+This data only gave the variable name, such as `S0802_C01_039`. To know what it stood for, we had to join our S0802 table with the keys given by the function load_variables. The keys would explain that `S0802_C01_039` actually means `Estimate!!Total!!POVERTY STATUS IN THE PAST 12 MONTHS!!Workers 16 years and over for whom poverty status is determined!!Below 100 percent of the poverty level`. This label needed to be split up so that we could take those individual components and filter by them in data analysis. The function separate_wider_delim() did the job.\
+Here is a sample of what the raw keys look like (we filtered keys to only match our table, S0802):
+
+```{r, message = F}
+load_variables(2022, "acs1/subject", cache = T) %>% 
+  head(5)
+```
+
+Then we joined data for S0802 in Seattle, S0802 in Washington, and the keys.
+
 ```{r, eval = F}
+# load the codebook for survey variables
+s0802_keys <- load_variables(2022, "acs1/subject", cache = T) %>% filter(str_detect(name, "S0802"))
 # rename column so that it can be joined to s0802 table
 # also separate out variable labels into multiple columns
 s0802_keys <- s0802_keys %>% 
@@ -96,14 +142,28 @@ s0802_keys <- s0802_keys %>%
 
 # combine Seattle and WA data, join keys
 s0802 <- rbind(s0802_sea, s0802_WA) %>% left_join(s0802_keys)
+```
 
-# load the gas and collisions data
-crash_sea <- read_delim("Data/Clean/seattle_collisions.csv")
-crash_WA <- read_delim("Data/Clean/wa_collisions.csv")
+This is what our cleaned S0802 data looks like:
+```{r, message = F, warning = F}
+s0802 %>% head(10)
+```
 
-gas_sea <- read_delim("Data/Clean/seattle_gas_dollars_per_gallon.csv")
-gas_WA <- read_delim("Data/Clean/wa_gas_dollars_per_gallon.csv")
+### Proccessing car crash and gas price data
+The gas prices data was already yearly:
+```{r}
+gas_sea %>% head(5)
+```
 
+To make it joinable to S0802, all we had to do was add a location variable and row bind the Seattle and Washington data together.\
+The crash data was in long form, where each row was a month, and years were columns:
+```{r}
+head(crash_sea, 5)
+```
+
+We needed to tidy it into long form, and summarize the crashes over a year. A trade-off we made was losing more detailed data (it might be interesting to look at the pattern of crashes over the course of a year). Then, we combined the gas and crash data together. Here, each row represents one year for one location (Seattle or Washington).
+
+```{r, eval = F}
 # add location variable to gas data so it can be joined
 gas_sea <- gas_sea %>% mutate(location = "Seattle city, Washington")
 gas_WA <- gas_WA %>% mutate(location = "Washington")
@@ -129,105 +189,169 @@ crash_WA_yearly <- crash_WA %>%
 gas_and_crashes <- rbind(crash_WA_yearly, crash_sea_yearly) %>% 
   left_join(gas) %>% 
   rename("gas_price" = price)
+```
 
+### Creating the final dataset
+
+Our two penultimate datasets, `s0802` and `gas_and_crashes`, can be easily joined into the final data frame by the `year` and `location` variables. It includes all the variables in S0802 from 2010-2022. Since we joined the gas and crash data to S0802, we lost some of that data, as crash data began in 2008 and gas data in 2004. However, since we are the most interested in comparing those rates to data within S0804, it doesn't make a difference.\
+Here is what our final dataset looks like.
+```{r, eval = F}
 final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
-
-# save the final dataset
-write.csv(final, "Data/Clean/final.csv", row.names = F)
+```
+```{r, message=F, warning=F}
+head(final, 10)
 ```
 
-Load final dataset
-```{r}
-final <- read_delim("Data/Clean/final.csv")
-```
-# Results 
+# Results
 
+### How have rates of public transportation usage changed over time in Seattle vs. Washington state?
 
-How does means of transportation vary with earnings?
-
-```{r}
-final %>% filter(trait4 == "Workers 16 years and over with earnings", 
-                 location == "Seattle city, Washington") %>% 
-  group_by(trait5, trait2) %>%
-  filter(trait5 != c("Median earnings (dollars)", NA), trait2 != "Total") %>% 
-  summarize(estimate = mean(estimate)) %>% 
-  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
-  geom_col(position = "fill") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Proportions of Transportation Types by Income in Seattle",
-       x = "Income",
-       y = "Proportion (%)",
-       fill = "Means of Transportation")
-```
-
-How has means of transportation changed over time in Seattle?
-
-```{r}
-final %>% filter(location == "Seattle city, Washington", 
-                 trait2 != "Total", 
-                 str_ends(variable, "001")) %>% 
-  ggplot(aes(x = year, y = estimate, fill = trait2)) +
-  geom_col(position = "fill")
-```
-
-color = year x = median earnings y = gas
-
-```{r}
-final %>% filter(str_ends(variable, "037"),
-                 location == "Seattle city, Washington") %>% 
-  group_by(year, gas_price) %>% 
-  summarise(estimate = mean(estimate)) %>% 
-  ggplot(aes(estimate, gas_price)) +
-  geom_point(aes(color = factor(year))) +
-  geom_path() +
-  labs(x = "Median Salary ($)")
-```
-
-vehicles available vs .... seattle vs. wa
-```{r}
-final %>% filter(trait4 == "VEHICLES AVAILABLE",
-                 location == "Seattle city, Washington",
-                 trait2 != "Total") %>% 
-  group_by(trait5, trait2) %>% 
-  summarise(estimate = mean(estimate)) %>% 
-  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
-  geom_col(position = "fill")
-
-
-final %>% filter(trait4 == "VEHICLES AVAILABLE",
-                 location == "Washington",
-                 trait2 != "Total") %>% 
-  group_by(trait5, trait2) %>% 
-  summarise(estimate = mean(estimate)) %>% 
-  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
-  geom_col(position = "fill")
-```
-
-Do people in Seattle use public transportation more than Washington?
-need to obtain ratio
-_C04_001 / 01_001
 ```{r}
 final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>% 
   mutate(ratio = lead(estimate) / estimate, moe = lead(moe) / estimate) %>% 
   filter(trait2 == "Total") %>% 
   ggplot(aes(year, ratio, group = location, color = location)) +
   geom_point() +
-  labs(y = "% of public commuters") +
-  geom_errorbar(aes(ymin = ratio - moe, ymax = ratio + moe))
+  geom_errorbar(aes(ymin = ratio - moe, ymax = ratio + moe)) + 
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) + 
+  labs(title = "Percentage of Public Commuters in Seattle and Washington Over Time",
+       x = "Year",
+       y = "Percentage of Public Commuters")
 ```
-commute time with regards to age group
+
+### Does income have a relationship with individuals' means of transportation? (Do wealthier individuals carpool/take public transportation less?)
+
+```{r, message = F}
+final %>% filter(trait4 == "Workers 16 years and over with earnings") %>% 
+  group_by(trait5, trait2, location) %>%
+  filter(trait5 != "Median earnings (dollars)", trait2 != "Total") %>% 
+  summarize(estimate = mean(estimate), moe = mean(moe))%>% 
+  ggplot(aes(x = trait5, y = estimate, fill = trait2)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = estimate - moe, ymax = estimate + moe), 
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  facet_wrap(~ location, scales = "free_y", ncol = 1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
+  labs(title = "Proportions of Transportation Types by Income in Seattle",
+       x = "Income",
+       y = "Proportion (%)",
+       fill = "Means of Transportation")
+```
+
+This looks kind of messy, maybe look into buttons with Plotly? Or don't include this graph
+
+```{r, message = F}
+final %>% filter(trait4 == "Workers 16 years and over with earnings", 
+                 trait5 != "Median earnings (dollars)",
+                 trait2 != "Total") %>% 
+  group_by(year, trait5, trait2) %>%
+  summarize(estimate = mean(estimate), moe = mean(moe)) %>% 
+  ggplot(aes(x = year, y = estimate, fill = trait2)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = estimate - moe, ymax = estimate + moe), 
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  facet_wrap(~ trait5, scales = "free_y", ncol = 2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
+  labs(title = "Means of Transportation Over Time in Different Income Brackets",
+       x = "Year",
+       y = "Proportion (%)",
+       fill = "Means of Transportation")
+```
+
+### Do people drive to work less if gas prices are higher?
+
 ```{r}
+final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>% 
+  mutate(ratio = lead(estimate) / estimate) %>% 
+  filter(trait2 == "Total") %>% 
+  ggplot(aes(gas_price, ratio, color = factor(year), shape = location)) +
+  geom_point() +
+  geom_path(aes(group = location), 
+            arrow = arrow(length = unit(0.20, "cm"))) +
+  labs(title = "Gas Price vs. Ratio of Public Commuters",
+       x = "Gas Price per Gallon ($)",
+       y = "Ratio of Public Commuters",
+       color = "Year",
+       shape = "Location")
+```
+
+### Do people in a certain age group take public transportation more?
+
+```{r, message = F}
 final %>% 
   filter(trait4 == "AGE", trait2 != "Total", trait5 != "Median age (years)") %>% 
   group_by(trait5, trait2, location) %>% 
   summarise(estimate = mean(estimate)) %>% 
   ggplot(aes(trait5, estimate, fill = trait2, group = trait2)) +
   geom_col(position = "fill") +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
   facet_wrap(~ location, scales = "free_y", ncol = 1) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Ratios of Means of Transportation with Regard to Age",
+       x = "Age",
+       y = "Ratio of Means of Transportation",
+       group = "Means of Transportation")
 ```
 
+### Are car crash rates correlated to the proportion of workers that drive alone to work?
 
+```{r}
+final %>% filter(str_ends(variable, "01_001") | str_ends(variable, "02_001")) %>% 
+  mutate(ratio_drive_alone = lead(estimate) / estimate) %>% 
+  filter(trait2 == "Total") %>% 
+  ggplot(aes(x = total_crashes, y = ratio_drive_alone, 
+             color = factor(year))) +
+  geom_point(aes(shape = location)) +
+  geom_path(aes(group = location),
+            arrow = arrow(length = unit(0.20, "cm"))) + 
+  labs(title = "Total Yearly Crashes vs. Ratio of Workers Who Drive Alone to Work",
+       x = "Total Crashes in a Year",
+       y = "Ratio of Workers Who Drive Alone to Work",
+       color = "Year",
+       shape = "Location")
+```
 
-# Findings 
+### Does travel time affect the mode of transportation used?
 
+Cam's original graph:
+
+```{r, message = F}
+final %>%
+  mutate(trait5 = factor(trait5, levels = c("Less than 10 minutes", "10 to 14 minutes", "15 to 19 minutes", "20 to 24 minutes", "25 to 29 minutes", "30 to 34 minutes", "35 to 44 minutes", "45 to 59 minutes", "60 or more minutes"))) %>%
+  filter(trait5 != "Mean travel time to work (minutes)", trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
+  group_by(trait5, trait2, location) %>%
+  summarize(avg_estimate = mean(estimate),
+            avg_moe = mean(moe)) %>%
+  ggplot(aes(x = trait5, y = avg_estimate, fill = trait2)) +
+  facet_wrap(~ location, scales = "free_y", ncol = 1) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
+  geom_errorbar(aes(ymin = avg_estimate - avg_moe, ymax = avg_estimate + avg_moe), 
+                position = position_dodge(width = 0.9),
+                width = 0.25) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Travel Time vs Population", x = "Travel Time", y = "Percentage of Population", fill = "Mode of Transportation")
+```
+
+Maybe this one is easier to explain:
+
+```{r, message = F}
+final %>%
+  mutate(trait5 = factor(trait5, levels = c("Less than 10 minutes", "10 to 14 minutes", "15 to 19 minutes", "20 to 24 minutes", "25 to 29 minutes", "30 to 34 minutes", "35 to 44 minutes", "45 to 59 minutes", "60 or more minutes"))) %>%
+  filter(trait5 != "Mean travel time to work (minutes)", trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
+  group_by(trait5, trait2, location) %>%
+  summarize(avg_estimate = mean(estimate),
+            avg_moe = mean(moe)) %>%
+  ggplot(aes(x = trait5, y = avg_estimate, fill = trait2)) +
+  facet_wrap(~ location, scales = "free_y", ncol = 1) +
+  geom_col(position = "fill") +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Travel Time vs Population", x = "Travel Time", y = "Percentage of Population", fill = "Mode of Transportation")
+```
+
+# Findings

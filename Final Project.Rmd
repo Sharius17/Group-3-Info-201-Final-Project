@@ -303,16 +303,16 @@ final %>%
 final %>% filter(str_ends(variable, "01_001") | str_ends(variable, "02_001")) %>% 
   mutate(ratio_drive_alone = lead(estimate) / estimate) %>% 
   filter(trait2 == "Total") %>% 
+  group_by(year) %>% 
+  summarise(ratio_drive_alone = mean(ratio_drive_alone),
+            total_crashes = mean(total_crashes)) %>% 
   ggplot(aes(x = total_crashes, y = ratio_drive_alone, 
              color = factor(year))) +
-  geom_point(aes(shape = location)) +
-  geom_path(aes(group = location),
-            arrow = arrow(length = unit(0.20, "cm"))) + 
+  geom_point() +
   labs(title = "Total Yearly Crashes vs. Ratio of Workers Who Drive Alone to Work",
        x = "Total Crashes in a Year",
        y = "Ratio of Workers Who Drive Alone to Work",
-       color = "Year",
-       shape = "Location")
+       color = "Year")
 ```
 
 ### Does travel time affect the mode of transportation used?

@@ -37,7 +37,30 @@ For this reason, our topic is interesting because it compares the many factors (
 -   Does travel time affect the mode of transportation used?
 
 # Explaining Our Data
+### Why we used these datasets
+For our research project, our team decided to narrow our focus to our shared location, Washington State, and more specifically, the bustling city of Seattle. Considering Seattle's dynamic urban environment with a diverse workforce and various modes of transportation, we aimed to explore a comparison between public transportation in Seattle and the broader context of Washington State.\
+We chose these datasets because we saw them as highly valuable for our research project. The primary dataset we are utilizing is the ACS data from the census, which is gathered annually and offers an extensive range of information across multiple categories. These categories include educational attainment, occupation/industry, income/socioeconomic status, geographic location, commute distance and time, and means of transportation. Even though our project focuses on a select few of these categories, we recognize the overall resourcefulness of the dataset, providing a comprehensive understanding of various aspects that could be relevant.
 
+### Our datasets
+Our primary dataset for this research project is sourced from the American Community Survey (ACS), specifically the S0802 Means of Transportation to Work by Selected Characteristics.  The ACS is a continuous survey that gathers comprehensive demographic, social, economic, and housing information about the U.S. population. The observations (estimates of numbers of people and the margin of error) are grouped by various demographic and employment factors. The population is everyone living in the United States. For the census not everyone responds to the surveys conducted so in this case the sample size is those who responded to this survey.\
+Another auxiliary dataset we will use is the Washington State Department of Transportation (WSDOT). They provide “crash records containing data from the Police Traffic Collision Reports, i.e., date and time of collision, location, contributing circumstances, weather, etc. as well as data derived from the officer's narrative and diagram (collision type, object struck, junction relationship, etc.).” (WSDOT website) Observations are counts of crashes (which can further be distilled by the type of collision) across time. The population is, around 7.9 million and the sample size is the number of crashes reported per month in the year.\
+Our last data set is “All Grades Conventional Retail Gasoline Prices for Washington State and the City of Seattle” which is from the U.S. Energy Information Administration (EIA). The observations give average gasoline prices across time. The population is residents in Washington. The sample size is residents in Seattle.
+
+### Who collected the data?
+All the data used in this research project is accessible to everyone. The Census Bureau collects the data for the American Community Survey (ACS). For the Washington State Department of Transportation, the published data is collected through their vehicular traffic data monitoring program, they collect and maintain data on the state route system from a network of permanent and short-duration traffic counters. (WSDOT website). Lastly, the U.S. Energy Information Administration (EIA) collects its data through two annual surveys (Form EIA-860, Annual Electric Generator Report, and Form EIA-923, Power Plant Operations Report) that have monthly supplements (EIA gov). 
+
+### Data quality issues
+Since this data is provided by the U.S. government, it is generally high quality. However, due to the impact of the COVID-19 pandemic, the American Community Survey data for the year 2020 was not released along with the other years. Because of this, we have a gap in our data for that year.
+
+### Our final dataset
+```{r}
+head(final, 10)
+```
+
+In our final dataset, each row represents the answer to one census question for a specific location, either Seattle city or Washington state in a specific year. The values we access for analysis are `estimate` and `moe`, which are defined by `trait1` through `trait6`. These vary from population estimates, to percentages, to income estimates. Total crashes and gas prices are also included. These are less detailed than the census questions, with values that only vary for location and year.\
+We have 9696 observations.\
+We don't use every variable from the American Community Survey table we pulled. However, examples of relevant variables we used are `estimate` and `moe` of total workers that drove alone vs. carpooled vs. took public transit to work as well as estimates of those transportation groups across age groups, income groups, and travel time. We also looked at the variables `total_crashes` and `gas_price`.\
+A quality issue we experienced was the lack of data for 2020 due to the pandemic.
 
 # Methods
 

@@ -12,6 +12,10 @@ library(tidycensus)
 options(scipen = 999)
 ```
 
+
+
+
+
 Census API calls and cleaning
 ```{r, eval = F}
 # first extract earliest (2010) data to initialize data frames

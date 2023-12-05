@@ -37,22 +37,28 @@ For this reason, our topic is interesting because it compares the many factors (
 -   Does travel time affect the mode of transportation used?
 
 # Explaining Our Data
+
 ### Why we used these datasets
+
 For our research project, our team decided to narrow our focus to our shared location, Washington State, and more specifically, the bustling city of Seattle. Considering Seattle's dynamic urban environment with a diverse workforce and various modes of transportation, we aimed to explore a comparison between public transportation in Seattle and the broader context of Washington State.\
 We chose these datasets because we saw them as highly valuable for our research project. The primary dataset we are utilizing is the ACS data from the census, which is gathered annually and offers an extensive range of information across multiple categories. These categories include educational attainment, occupation/industry, income/socioeconomic status, geographic location, commute distance and time, and means of transportation. Even though our project focuses on a select few of these categories, we recognize the overall resourcefulness of the dataset, providing a comprehensive understanding of various aspects that could be relevant.
 
 ### Our datasets
-Our primary dataset for this research project is sourced from the American Community Survey (ACS), specifically the S0802 Means of Transportation to Work by Selected Characteristics.  The ACS is a continuous survey that gathers comprehensive demographic, social, economic, and housing information about the U.S. population. The observations (estimates of numbers of people and the margin of error) are grouped by various demographic and employment factors. The population is everyone living in the United States. For the census not everyone responds to the surveys conducted so in this case the sample size is those who responded to this survey.\
-Another auxiliary dataset we will use is the Washington State Department of Transportation (WSDOT). They provide “crash records containing data from the Police Traffic Collision Reports, i.e., date and time of collision, location, contributing circumstances, weather, etc. as well as data derived from the officer's narrative and diagram (collision type, object struck, junction relationship, etc.).” (WSDOT website) Observations are counts of crashes (which can further be distilled by the type of collision) across time. The population is, around 7.9 million and the sample size is the number of crashes reported per month in the year.\
-Our last data set is “All Grades Conventional Retail Gasoline Prices for Washington State and the City of Seattle” which is from the U.S. Energy Information Administration (EIA). The observations give average gasoline prices across time. The population is residents in Washington. The sample size is residents in Seattle.
+
+Our primary dataset for this research project is sourced from the American Community Survey (ACS), specifically the S0802 Means of Transportation to Work by Selected Characteristics. The ACS is a continuous survey that gathers comprehensive demographic, social, economic, and housing information about the U.S. population. The observations (estimates of numbers of people and the margin of error) are grouped by various demographic and employment factors. The population is everyone living in the United States. For the census not everyone responds to the surveys conducted so in this case the sample size is those who responded to this survey.\
+Another auxiliary dataset we will use is the Washington State Department of Transportation (WSDOT). They provide "crash records containing data from the Police Traffic Collision Reports, i.e., date and time of collision, location, contributing circumstances, weather, etc. as well as data derived from the officer's narrative and diagram (collision type, object struck, junction relationship, etc.)." (WSDOT website) Observations are counts of crashes (which can further be distilled by the type of collision) across time. The population is, around 7.9 million and the sample size is the number of crashes reported per month in the year.\
+Our last data set is "All Grades Conventional Retail Gasoline Prices for Washington State and the City of Seattle" which is from the U.S. Energy Information Administration (EIA). The observations give average gasoline prices across time. The population is residents in Washington. The sample size is residents in Seattle.
 
 ### Who collected the data?
-All the data used in this research project is accessible to everyone. The Census Bureau collects the data for the American Community Survey (ACS). For the Washington State Department of Transportation, the published data is collected through their vehicular traffic data monitoring program, they collect and maintain data on the state route system from a network of permanent and short-duration traffic counters. (WSDOT website). Lastly, the U.S. Energy Information Administration (EIA) collects its data through two annual surveys (Form EIA-860, Annual Electric Generator Report, and Form EIA-923, Power Plant Operations Report) that have monthly supplements (EIA gov). 
+
+All the data used in this research project is accessible to everyone. The Census Bureau collects the data for the American Community Survey (ACS). For the Washington State Department of Transportation, the published data is collected through their vehicular traffic data monitoring program, they collect and maintain data on the state route system from a network of permanent and short-duration traffic counters. (WSDOT website). Lastly, the U.S. Energy Information Administration (EIA) collects its data through two annual surveys (Form EIA-860, Annual Electric Generator Report, and Form EIA-923, Power Plant Operations Report) that have monthly supplements (EIA gov).
 
 ### Data quality issues
+
 Since this data is provided by the U.S. government, it is generally high quality. However, due to the impact of the COVID-19 pandemic, the American Community Survey data for the year 2020 was not released along with the other years. Because of this, we have a gap in our data for that year.
 
 ### Our final dataset
+
 ```{r}
 head(final, 10)
 ```
@@ -168,18 +174,22 @@ s0802 <- rbind(s0802_sea, s0802_WA) %>% left_join(s0802_keys)
 ```
 
 This is what our cleaned S0802 data looks like:
+
 ```{r, message = F, warning = F}
 s0802 %>% head(10)
 ```
 
 ### Proccessing car crash and gas price data
+
 The gas prices data was already yearly:
+
 ```{r}
 gas_sea %>% head(5)
 ```
 
 To make it joinable to S0802, all we had to do was add a location variable and row bind the Seattle and Washington data together.\
 The crash data was in long form, where each row was a month, and years were columns:
+
 ```{r}
 head(crash_sea, 5)
 ```
@@ -218,9 +228,11 @@ gas_and_crashes <- rbind(crash_WA_yearly, crash_sea_yearly) %>%
 
 Our two penultimate datasets, `s0802` and `gas_and_crashes`, can be easily joined into the final data frame by the `year` and `location` variables. It includes all the variables in S0802 from 2010-2022. Since we joined the gas and crash data to S0802, we lost some of that data, as crash data began in 2008 and gas data in 2004. However, since we are the most interested in comparing those rates to data within S0804, it doesn't make a difference.\
 Here is what our final dataset looks like.
+
 ```{r, eval = F}
 final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
 ```
+
 ```{r, message=F, warning=F}
 head(final, 10)
 ```
@@ -241,6 +253,8 @@ final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>
        x = "Year",
        y = "Percentage of Public Commuters")
 ```
+
+The percent of commuters that used public transportation were much higher in Seattle over the years comparative to Washington state as a whole. There was a huge drop-off in public transportation commuters after the pandemic. Seattle public commuting experienced a sharp decline at the beginning of the pandemic and has slowly begun to trend upwards. The increase from 2021 to 2022 seems to be much larger than the difference between every other year.
 
 ### Does income have a relationship with individuals' means of transportation? (Do wealthier individuals carpool/take public transportation less?)
 
@@ -263,34 +277,14 @@ final %>% filter(trait4 == "Workers 16 years and over with earnings") %>%
        fill = "Means of Transportation")
 ```
 
-This looks kind of messy, maybe look into buttons with Plotly? Or don't include this graph
-
-```{r, message = F}
-final %>% filter(trait4 == "Workers 16 years and over with earnings", 
-                 trait5 != "Median earnings (dollars)",
-                 trait2 != "Total") %>% 
-  group_by(year, trait5, trait2) %>%
-  summarize(estimate = mean(estimate), moe = mean(moe)) %>% 
-  ggplot(aes(x = year, y = estimate, fill = trait2)) +
-  geom_col(position = "dodge") +
-  geom_errorbar(aes(ymin = estimate - moe, ymax = estimate + moe), 
-                position = position_dodge(width = 0.9),
-                width = 0.25) +
-  facet_wrap(~ trait5, scales = "free_y", ncol = 2) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
-  labs(title = "Means of Transportation Over Time in Different Income Brackets",
-       x = "Year",
-       y = "Proportion (%)",
-       fill = "Means of Transportation")
-```
+In both the city of Seattle and Washington state, all findings were inconsequential. The percentage of workers that used each mode of transportation was more or less the same. Although there are small changes in each income bracket, the percentages were less than 5 percent. There didn't seem to be a big correlation between someone's income and their mode of transportation used to get to and from work. Whether wealthier individuals were less likely to take public transportation turned out to be inconclusive.
 
 ### Do people drive to work less if gas prices are higher?
 
 ```{r}
 final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>% 
   mutate(ratio = lead(estimate) / estimate) %>% 
-  filter(trait2 == "Total") %>% 
+  filter(trait2 == "Total") %>%
   ggplot(aes(gas_price, ratio, color = factor(year), shape = location)) +
   geom_point() +
   geom_path(aes(group = location), 
@@ -301,6 +295,8 @@ final %>% filter(str_ends(variable, "04_001") | str_ends(variable, "01_001")) %>
        color = "Year",
        shape = "Location")
 ```
+
+The amount of people who used public transportation in the state of Washington does not seem to correlate to the price of gas. With the exception of 2019, the amount of public commuters didn't change much. However in Seattle, the numbers seem to jump around a bit and there was a huge drop in commuters around 2019. There are sizable increases in commuters correlating to gas prices in 2012, 2018 and 2021 but there isn't any conclusive evidence in our data that states that people will drive to work less if gas prices are rising.
 
 ### Do people in a certain age group take public transportation more?
 
@@ -320,6 +316,8 @@ final %>%
        group = "Means of Transportation")
 ```
 
+In Seattle, there is a respectable amount of commuters between the age of 20 and 24 who prefer to use public transportation over private vehicles. Commuters between age 16-44 are more likely to use public transportation compared to their counterparts. In Washington state it is slightly different, only commuters between age 20-44 are more likely to use public transportation comparatively.
+
 ### Are car crash rates correlated to the proportion of workers that drive alone to work?
 
 ```{r}
@@ -338,43 +336,31 @@ final %>% filter(str_ends(variable, "01_001") | str_ends(variable, "02_001")) %>
        color = "Year")
 ```
 
+The graph doesn't show a substantial correlation between individuals driving alone to work and the frequency of crashes in a given year. In both 2021 and 2022, there was a decrease in the number of solo commuters and total crashes. However, these patterns may be caused by reduced traffic by the pandemic. Beyond the pandemic affected years, there appears to be no connection between the total crashes in a year and the number of solo commuters. The data year by year does not show a clear correlation between the two variables.
+
 ### Does travel time affect the mode of transportation used?
 
-Cam's original graph:
-
 ```{r, message = F}
 final %>%
   mutate(trait5 = factor(trait5, levels = c("Less than 10 minutes", "10 to 14 minutes", "15 to 19 minutes", "20 to 24 minutes", "25 to 29 minutes", "30 to 34 minutes", "35 to 44 minutes", "45 to 59 minutes", "60 or more minutes"))) %>%
-  filter(trait5 != "Mean travel time to work (minutes)", trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
+  filter(trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
   group_by(trait5, trait2, location) %>%
   summarize(avg_estimate = mean(estimate),
             avg_moe = mean(moe)) %>%
   ggplot(aes(x = trait5, y = avg_estimate, fill = trait2)) +
-  facet_wrap(~ location, scales = "free_y", ncol = 1) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) +
-  geom_errorbar(aes(ymin = avg_estimate - avg_moe, ymax = avg_estimate + avg_moe), 
-                position = position_dodge(width = 0.9),
-                width = 0.25) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Travel Time vs Population", x = "Travel Time", y = "Percentage of Population", fill = "Mode of Transportation")
-```
-
-Maybe this one is easier to explain:
-
-```{r, message = F}
-final %>%
-  mutate(trait5 = factor(trait5, levels = c("Less than 10 minutes", "10 to 14 minutes", "15 to 19 minutes", "20 to 24 minutes", "25 to 29 minutes", "30 to 34 minutes", "35 to 44 minutes", "45 to 59 minutes", "60 or more minutes"))) %>%
-  filter(trait5 != "Mean travel time to work (minutes)", trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
-  group_by(trait5, trait2, location) %>%
-  summarize(avg_estimate = mean(estimate),
-            avg_moe = mean(moe)) %>%
-  ggplot(aes(x = trait5, y = avg_estimate, fill = trait2)) +
-  facet_wrap(~ location, scales = "free_y", ncol = 1) +
   geom_col(position = "fill") +
+  facet_wrap(~ location, scales = "free_y", ncol = 1) +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73")) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Travel Time vs Population", x = "Travel Time", y = "Percentage of Population", fill = "Mode of Transportation")
+  labs(title = "Travel Time vs Population", x = "Travel Time", y = "Percentage of Commuters", fill = "Mode of Transportation")
 ```
 
+There is a clear correlation between the travel time and the mode of transportation used by the population. There is a noticeable trend that occurs the longer the commute time is. We can see that commuters are more likely to take public transportation the longer it takes for them to commute in Seattle and Washington. Commuters are 50 percent more likely to commute using public transportation when it would take them 60 or more minutes to get to work. It is evident that travel time has a clear connection with the mode of transportation.
+
 # Findings
+
+The percentage of commuters who took public transportation had decreased during the pandemic. This made sense since it was unsafe for individuals to go to work while their health was at risk. Our data was slightly limited by the fact that there was no census data in the beginning of the pandemic. There were no clear correlations when comparing data between gas prices, crashes, and income. The main reason for this was that data for our gas prices and crashes were only given to us yearly. The data was too generalized compared to the census data that made it difficult to find clear correlations between the variables. The range income data was not detailed enough to make an accurate assessment of our research question. The average household income in Seattle is roughly $79,000 and $77,000 in Washington. The data given to us had the highest variable being $75,000 or more, so it made it difficult to truly analyze the amount of wealthier people who took public transportation versus individuals of lower income brackets. 
+
+We were able to find clear connections between the amount of people who preferred to use public transportation with longer commute times and the age of commuters who were more likely to take public transportation. Commuters that were in their early adulthood were more inclined to take public transportation compared to their older counterparts. There are many factors that could affect why young adults are more likely to take public transportation. There may be financial conditions that would make it difficult for them to own a vehicle. Public transport is seen as more convenient and younger generations are less likely to be affected by social stigma related to using public transportation. Commuters who prefer to take public transportation when their commute times are longer may be considering the cost of driving, difficulties with parking availability, and traffic congestion. In a city like Seattle, traffic congestion and parking availability are real concerns when deciding whether to drive versus taking public transportation. 
+
+In the future we would like to find more detailed auxiliary data in relation to our transportation data to make clearer connections about public commuters. Moving forward, we want to find more detailed data to make more accurate comparisons between different factors related to public commuters. We would prefer to find data such as traffic data, weather data, parking availability and see how that would affect our findings. We could hopefully find a more accurate comparison of income data to see if wealthier people do in fact take transportation less than those in poverty. Looking ahead, our research aims to look into the different factors that influence public commuters' choices. We envision ourselves incorporating more detailed auxiliary data to find clear patterns that affect the decisions to take public transportation.

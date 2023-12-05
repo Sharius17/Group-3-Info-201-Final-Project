@@ -1,6 +1,6 @@
 ---
 title: "Final Project"
-author: "Joy Li, Cam Bun, Marisa Johnson, Shana Arius"
+author: "Joy Li, Cam Bun, Marisa Johnson, Shana Ariussss"
 date: "2023-11-30"
 output: html_document
 ---

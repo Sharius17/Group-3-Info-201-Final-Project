@@ -343,7 +343,7 @@ The graph doesn't show a substantial correlation between individuals driving alo
 ```{r, message = F}
 final %>%
   mutate(trait5 = factor(trait5, levels = c("Less than 10 minutes", "10 to 14 minutes", "15 to 19 minutes", "20 to 24 minutes", "25 to 29 minutes", "30 to 34 minutes", "35 to 44 minutes", "45 to 59 minutes", "60 or more minutes"))) %>%
-  filter(trait2 != "Total", trait4 == "TRAVEL TIME TO WORK") %>%
+  filter(trait2 != "Total", trait4 == "TRAVEL TIME TO WORK", trait5 != "NA") %>%
   group_by(trait5, trait2, location) %>%
   summarize(avg_estimate = mean(estimate),
             avg_moe = mean(moe)) %>%

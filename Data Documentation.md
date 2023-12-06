@@ -19,8 +19,8 @@ total_crashes: all crashes recorded by police officers for each year, separated 
 gas_price: average gasoline price for each year, separated by location.
 
 ## Basic summary statistics
-Number of rows: 9696
-Number of columns: 13
+Number of rows: 9696\
+Number of columns: 13\
 Missing/invalid values: We do not have data for the year 2020 because ACS survey data was not provided due to the effects of the COVID-19 pandemic. Additionally, trait1 - trait6 have some NA values for ACS questions which did not require 6 levels to be described.
 
 

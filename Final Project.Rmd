@@ -46,12 +46,12 @@ We chose these datasets because we saw them as highly valuable for our research 
 ### Our datasets
 
 Our primary dataset for this research project is sourced from the American Community Survey (ACS), specifically the S0802 Means of Transportation to Work by Selected Characteristics. The ACS is a continuous survey that gathers comprehensive demographic, social, economic, and housing information about the U.S. population. The observations (estimates of numbers of people and the margin of error) are grouped by various demographic and employment factors. The population is everyone living in the United States. For the census not everyone responds to the surveys conducted so in this case the sample size is those who responded to this survey.\
-Another auxiliary dataset we will use is the Washington State Department of Transportation (WSDOT). They provide "crash records containing data from the Police Traffic Collision Reports, i.e., date and time of collision, location, contributing circumstances, weather, etc. as well as data derived from the officer's narrative and diagram (collision type, object struck, junction relationship, etc.)." (WSDOT website) Observations are counts of crashes (which can further be distilled by the type of collision) across time. The population is, around 7.9 million and the sample size is the number of crashes reported per month in the year.\
-Our last data set is "All Grades Conventional Retail Gasoline Prices for Washington State and the City of Seattle" which is from the U.S. Energy Information Administration (EIA). The observations give average gasoline prices across time. The population is residents in Washington. The sample size is residents in Seattle.
+Another auxiliary dataset we will use is the Washington State Department of Transportation (WSDOT). They provide "crash records containing data from the Police Traffic Collision Reports, i.e., date and time of collision, location, contributing circumstances, weather, etc. as well as data derived from the officer's narrative and diagram (collision type, object struck, junction relationship, etc.)." (WSDOT website) Observations are counts of crashes (which can further be distilled by the type of collision) across time. The population is all crashes that occur in Seattle or Washington while the sample is crashes that were recorded by police.\
+Our last data set is "All Grades Conventional Retail Gasoline Prices for Washington State and the City of Seattle" which is from the U.S. Energy Information Administration (EIA). The observations give average gasoline prices across time. The population is all retail outlets that sell gasoline while the sample is whichever outlets reported their prices to the Energy Information Administration.
 
-### Who collected the data?
+### Usage permissions + who collected the data?
 
-All the data used in this research project is accessible to everyone. The Census Bureau collects the data for the American Community Survey (ACS). For the Washington State Department of Transportation, the published data is collected through their vehicular traffic data monitoring program, they collect and maintain data on the state route system from a network of permanent and short-duration traffic counters. (WSDOT website). Lastly, the U.S. Energy Information Administration (EIA) collects its data through two annual surveys (Form EIA-860, Annual Electric Generator Report, and Form EIA-923, Power Plant Operations Report) that have monthly supplements (EIA gov).
+All the data used in this research project is accessible to everyone. The Census Bureau collects the data for the American Community Survey (ACS). For the Washington State Department of Transportation, the published data is collected through their vehicular traffic data monitoring program, they collect and maintain data on the state route system from a network of permanent and short-duration traffic counters (WSDOT website). Lastly, the U.S. Energy Information Administration (EIA) collects its data through two annual surveys (Form EIA-860, Annual Electric Generator Report, and Form EIA-923, Power Plant Operations Report) that have monthly supplements (EIA gov).
 
 ### Data quality issues
 
@@ -63,14 +63,16 @@ Since this data is provided by the U.S. government, it is generally high quality
 head(final, 10)
 ```
 
-In our final dataset, each row represents the answer to one census question for a specific location, either Seattle city or Washington state in a specific year. The values we access for analysis are `estimate` and `moe`, which are defined by `trait1` through `trait6`. These vary from population estimates, to percentages, to income estimates. Total crashes and gas prices are also included. These are less detailed than the census questions, with values that only vary for location and year.\
+In our final dataset, each row represents the answer to one census question for a specific location, either Seattle city or Washington state in a specific year. The values we access for analysis are `estimate` and `moe`, which are defined by `trait1` through `trait6`. These vary from population estimates, to percentages, to income estimates. In the displayed data, the first row is a population estimate, while the next few rows are percentages. Total crashes and gas prices are also included. These are less detailed than the census questions, with values that only vary for location and year.\
 We have 9696 observations.\
 We don't use every variable from the American Community Survey table we pulled. However, examples of relevant variables we used are `estimate` and `moe` of total workers that drove alone vs. carpooled vs. took public transit to work as well as estimates of those transportation groups across age groups, income groups, and travel time. We also looked at the variables `total_crashes` and `gas_price`.\
 A quality issue we experienced was the lack of data for 2020 due to the pandemic.
 
 # Methods
 
-### Processing census data
+### How we processed our data
+
+#### Processing census data
 
 The tidycensus package provides American Community Survey data in pre-tidied (long) format. The table we are interested in are s0802 (Means of Transportation to Work by Selected Characteristics).\
 Here is what a few rows of ACS data look like with one API call:
@@ -179,7 +181,7 @@ This is what our cleaned S0802 data looks like:
 s0802 %>% head(10)
 ```
 
-### Proccessing car crash and gas price data
+#### Technical decisions in proccessing car crash and gas price data
 
 The gas prices data was already yearly:
 
@@ -224,9 +226,9 @@ gas_and_crashes <- rbind(crash_WA_yearly, crash_sea_yearly) %>%
   rename("gas_price" = price)
 ```
 
-### Creating the final dataset
+#### Creating the final dataset + some tradeoffs
 
-Our two penultimate datasets, `s0802` and `gas_and_crashes`, can be easily joined into the final data frame by the `year` and `location` variables. It includes all the variables in S0802 from 2010-2022. Since we joined the gas and crash data to S0802, we lost some of that data, as crash data began in 2008 and gas data in 2004. However, since we are the most interested in comparing those rates to data within S0804, it doesn't make a difference.\
+Our two penultimate datasets, `s0802` and `gas_and_crashes`, can be easily joined into the final data frame by the `year` and `location` variables. It includes all the variables in S0802 from 2010-2022. Since we joined the gas and crash data to S0802, we lost some of that data, as crash data began in 2008 and gas data in 2004. However, since we are the most interested in comparing those rates to data within S0804, it doesn't make a big difference.\
 Here is what our final dataset looks like.
 
 ```{r, eval = F}
@@ -236,6 +238,18 @@ final <- left_join(s0802, gas_and_crashes, by = c("year", "location"))
 ```{r, message=F, warning=F}
 head(final, 10)
 ```
+
+### Which variables did we include?
+
+We included all 404 of the variables in the S0802 ACS table for Seattle city and Washington state from the years 2010-2022 (except for the missing year 2020). We also joined average gas price and total collisions for each year and location. We had some extraneous variables that we didn't end up using, but since we had the whole questionnaire available, we wanted to have the freedom to explore the variables during analysis.
+
+### How did we select our sample?
+
+We did not do any sampling since our data was already summarized.\
+However, we did explicitly select the years 2010-2022 of census data, because we thought it would be insightful to look at longitudinal changes. Census data can be accessed in 1-year or 5-year summaries, so we had to join 11 (x2, for Seattle city and Washington state) 1-year summaries for our longitudinal final dataset.
+
+### Complex statistical methods
+We did not use any complex statistical methods.
 
 # Results
 
@@ -359,16 +373,16 @@ There is a clear correlation between the travel time and the mode of transportat
 
 # Findings
 
-The percentage of commuters who took public transportation had decreased during the pandemic. This made sense since it was unsafe for individuals to go to work while their health was at risk. Our data was slightly limited by the fact that there was no census data in the beginning of the pandemic. There were no clear correlations when comparing data between gas prices, crashes, and income. The main reason for this was that data for our gas prices and crashes were only given to us yearly. The data was too generalized compared to the census data that made it difficult to find clear correlations between the variables. The range income data was not detailed enough to make an accurate assessment of our research question. The average household income in Seattle is roughly $79,000 and $77,000 in Washington. The data given to us had the highest variable being $75,000 or more, so it made it difficult to truly analyze the amount of wealthier people who took public transportation versus individuals of lower income brackets. 
+The percentage of commuters who took public transportation had decreased during the pandemic. This made sense since it was unsafe for individuals to go to work while their health was at risk. Our data was slightly limited by the fact that there was no census data in the beginning of the pandemic. There were no clear correlations when comparing data between gas prices, crashes, and income. The main reason for this was that data for our gas prices and crashes were only given to us yearly. The data was too generalized compared to the census data that made it difficult to find clear correlations between the variables. The range income data was not detailed enough to make an accurate assessment of our research question. The average household income in Seattle is roughly \$79,000 and \$77,000 in Washington. The data given to us had the highest variable being \$75,000 or more, so it made it difficult to truly analyze the amount of wealthier people who took public transportation versus individuals of lower income brackets.
 
-We were able to find clear connections between the amount of people who preferred to use public transportation with longer commute times and the age of commuters who were more likely to take public transportation. Commuters that were in their early adulthood were more inclined to take public transportation compared to their older counterparts. There are many factors that could affect why young adults are more likely to take public transportation. There may be financial conditions that would make it difficult for them to own a vehicle. Public transport is seen as more convenient and younger generations are less likely to be affected by social stigma related to using public transportation. Commuters who prefer to take public transportation when their commute times are longer may be considering the cost of driving, difficulties with parking availability, and traffic congestion. In a city like Seattle, traffic congestion and parking availability are real concerns when deciding whether to drive versus taking public transportation. 
+We were able to find clear connections between the amount of people who preferred to use public transportation with longer commute times and the age of commuters who were more likely to take public transportation. Commuters that were in their early adulthood were more inclined to take public transportation compared to their older counterparts. There are many factors that could affect why young adults are more likely to take public transportation. There may be financial conditions that would make it difficult for them to own a vehicle. Public transport is seen as more convenient and younger generations are less likely to be affected by social stigma related to using public transportation. Commuters who prefer to take public transportation when their commute times are longer may be considering the cost of driving, difficulties with parking availability, and traffic congestion. In a city like Seattle, traffic congestion and parking availability are real concerns when deciding whether to drive versus taking public transportation.
 
 In the future we would like to find more detailed auxiliary data in relation to our transportation data to make clearer connections about public commuters. Moving forward, we want to find more detailed data to make more accurate comparisons between different factors related to public commuters. We would prefer to find data such as traffic data, weather data, parking availability and see how that would affect our findings. We could hopefully find a more accurate comparison of income data to see if wealthier people do in fact take transportation less than those in poverty. Looking ahead, our research aims to look into the different factors that influence public commuters' choices. We envision ourselves incorporating more detailed auxiliary data to find clear patterns that affect the decisions to take public transportation.
 
 # Conclusion
 
-In this project, we worked with various reputable datasets for both the city of Seattle and Washington State. We utilized the package tidycensus to obtain American Community Survey data, combining and joining census data from different years to be able to analyze it longitudinally. We combined the census data with datasets on car crashes and gas prices, which resulted in excluding monthly car crash data. 
+In this project, we worked with various reputable datasets for both the city of Seattle and Washington State. We utilized the package tidycensus to obtain American Community Survey data, combining and joining census data from different years to be able to analyze it longitudinally. We combined the census data with datasets on car crashes and gas prices, which resulted in excluding monthly car crash data.
 
-We, as general members of the public, did not have access to more detailed government databases regarding demographic data. The datasets that we utilized were proven to be too summarized (as they mainly had yearly-based data and thus were largely scaled), so we found few correlations. A key example of such a limitation was that the data’s highest variable for household income in Seattle was \$75,000 (while the average income is \$79,000), which severely limited the amount of data we worked with, as it excluded the transportation methods of high earners. If we had more detailed data, we would have been able to find more conclusive relationships between our variables. 
+We, as general members of the public, did not have access to more detailed government databases regarding demographic data. The datasets that we utilized were proven to be too summarized (as they mainly had yearly-based data and thus were largely scaled), so we found few correlations. A key example of such a limitation was that the data's highest variable for household income in Seattle was \$75,000 (while the average income is \$79,000), which severely limited the amount of data we worked with, as it excluded the transportation methods of high earners. If we had more detailed data, we would have been able to find more conclusive relationships between our variables.
 
-The main takeaways from this project is that there is a clear dependence on public transit among certain age groups, especially in the city of Seattle (as compared to the rest of Washington state), when commute times are nearly an hour. We also found that younger commuters, specifically within the age range of 16 to 44, were more likely to utilize public transportation as compared to commuters in older age groups. Finally, we discovered that the COVID-19 pandemic limited transit data collected in 2020 and negatively affected public transportation usage as a whole due to social distancing measures. 
+The main takeaways from this project is that there is a clear dependence on public transit among certain age groups, especially in the city of Seattle (as compared to the rest of Washington state), when commute times are nearly an hour. We also found that younger commuters, specifically within the age range of 16 to 44, were more likely to utilize public transportation as compared to commuters in older age groups. Finally, we discovered that the COVID-19 pandemic limited transit data collected in 2020 and negatively affected public transportation usage as a whole due to social distancing measures.

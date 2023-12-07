@@ -328,7 +328,13 @@ final %>%
   labs(title = "Ratios of Means of Transportation with Regard to Age",
        x = "Age",
        y = "Ratio of Means of Transportation",
-       group = "Means of Transportation")
+       group = "Means of Transportation",
+       fill = "Means of Transportation")
+
+ggsave(file = "agevscommunter.png",
+       height = 1440,
+       width = 2560,
+       units = "px")
 ```
 
 In Seattle, there is a respectable amount of commuters between the age of 20 and 24 who prefer to use public transportation over private vehicles. Commuters between age 16-44 are more likely to use public transportation compared to their counterparts. In Washington state it is slightly different, only commuters between age 20-44 are more likely to use public transportation comparatively.
